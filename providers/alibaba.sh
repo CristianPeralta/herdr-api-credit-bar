@@ -2,7 +2,9 @@
 # ponytail: credit constants (nominal $200, start 2026-06) are a fact of THIS
 # account's Alibaba coupon, not generic config. If a second credit source
 # shows up, move to plugins/config/api-credit-bar/config.toml then.
-set -euo pipefail
+# no -e: aliyun failures (missing CLI, no auth) are handled explicitly below,
+# not left to crash the pane silently.
+set -uo pipefail
 CREDIT_NOMINAL=200
 CREDIT_START_YEAR=2026
 CREDIT_START_MONTH=6
@@ -67,18 +69,27 @@ while true; do
   # credit is a whole-account shared pool, sum deductions across ALL products
   # (not just model inference), otherwise "remaining" would be inflated.
   used=0
+  error=""
   for offset in $(seq 0 "$months"); do
     cycle=$(date -u -d "${CREDIT_START_YEAR}-0${CREDIT_START_MONTH}-01 +${offset} month" +%Y-%m)
-    d=$(aliyun bssopenapi QueryBillOverview --BillingCycle "$cycle" 2>/dev/null \
-      | jq -r '[.Data.Items.Item[]?.DeductedByCoupons] | add // 0')
+    resp=$(aliyun bssopenapi QueryBillOverview --BillingCycle "$cycle" 2>&1)
+    if [ $? -ne 0 ]; then
+      error=$(sed -n '1p' <<<"$resp")
+      break
+    fi
+    d=$(jq -r '[.Data.Items.Item[]?.DeductedByCoupons] | add // 0' <<<"$resp" 2>/dev/null)
     used=$(echo "$used + ${d:-0}" | bc)
   done
-  remaining=$(echo "$CREDIT_NOMINAL - $used" | bc)
-  pct=$(echo "scale=0; ($remaining * 100) / $CREDIT_NOMINAL / 1" | bc)
 
   printf "%*sAlibaba · Model Studio\n" "$SIDE_PAD" ""
   echo
-  render_bar "credits" "$pct"
+  if [ -n "$error" ]; then
+    center_line "$(printf '\e[2mnot authenticated: %s\e[0m' "$error")"
+  else
+    remaining=$(echo "$CREDIT_NOMINAL - $used" | bc)
+    pct=$(echo "scale=0; ($remaining * 100) / $CREDIT_NOMINAL / 1" | bc)
+    render_bar "credits" "$pct"
+  fi
   echo
   justify_three \
     "$(printf '\e[2m%s\e[0m' "$(date -u +%H:%M)")" \
