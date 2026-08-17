@@ -41,6 +41,10 @@ Drop a new script in `providers/<name>.sh` (same loop-and-print shape as `alibab
 (copy `actions/open-alibaba.sh`, change the label and script path). No shared credential
 storage: each provider script reads its own already-configured CLI or keyring.
 
+## Feedback
+
+Feedback, bug reports, and PRs welcome via GitHub Issues.
+
 ## License
 
 MIT
