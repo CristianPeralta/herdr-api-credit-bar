@@ -1,6 +1,6 @@
 id = "api-credit-bar"
 name = "API Credit Bar"
-version = "0.1.0"
+version = "0.1.1"
 min_herdr_version = "0.7.0"
 description = "Remaining credit for pay-as-you-go API providers, in a small persistent pane (Alibaba Model Studio to start)"
 platforms = ["linux"]

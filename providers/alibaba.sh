@@ -92,7 +92,7 @@ while true; do
   fi
   echo
   justify_three \
-    "$(printf '\e[2m%s\e[0m' "$(date -u +%H:%M)")" \
+    "$(printf '\e[2m%s\e[0m' "$(date +%H:%M)")" \
     "$(printf '\e[2mq quit\e[0m')" \
     "$(printf '\e[2mr refresh\e[0m')"
 
